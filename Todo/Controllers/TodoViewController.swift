@@ -11,16 +11,29 @@ import UIKit
 class TodoViewController: UITableViewController
 {
 
-    var itemArray = ["Get out", "Buy chocolate", "Get some good sleep"]
+    var itemArray = [Item]() // an array of Item objects (the model Item)
     
-    let  defaults = UserDefaults.standard
+    let defaults = UserDefaults.standard
     
     override func viewDidLoad()
     {
         super.viewDidLoad()
         
+        let newItem = Item()
+        newItem.title = "Eat"
+        itemArray.append(newItem)
+        
+        let newItem2 = Item()
+        newItem2.title = "What?"
+        itemArray.append(newItem2)
+        
+        let newItem3 = Item()
+        newItem3.title = "Food!"
+        itemArray.append(newItem3)
+        
+        
         // populate the saved array from usersDefaults
-        if let items = defaults.array(forKey: "TodoListArray") as? [String] {
+        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
             itemArray = items
         }
     }
@@ -37,7 +50,10 @@ class TodoViewController: UITableViewController
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
     {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TodoItemCell", for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row]
+        let item = itemArray[indexPath.row]
+        
+        cell.textLabel?.text = item.title
+        cell.accessoryType = item.done == true ? .checkmark : .none
         
         return cell
     }
@@ -48,13 +64,10 @@ class TodoViewController: UITableViewController
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
     {
-        //print(itemArray[indexPath.row])
+        // set done, so we can add/remove the checkmark for selected row
+        itemArray[indexPath.row].done = itemArray[indexPath.row].done == true ? false : true
         
-        // add/remove checkmark for selected row
-        if tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark
-            { tableView.cellForRow(at: indexPath)?.accessoryType = .none }
-        else
-            { tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark }
+        tableView.reloadData()
         
         // deselect selected row for better user experience
         tableView.deselectRow(at: indexPath, animated: true)
@@ -73,7 +86,10 @@ class TodoViewController: UITableViewController
         // create action for the alert
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             // what will happen when the user clicked the Add Item btn in the UIAlert
-            self.itemArray.append(textField.text!)
+            
+            let newItem = Item()
+            newItem.title = textField.text!
+            self.itemArray.append(newItem)
             self.defaults.set(self.itemArray, forKey: "TodoListArray") // save to users defaults
             self.tableView.reloadData()
         }
