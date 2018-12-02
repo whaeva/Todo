@@ -12,30 +12,13 @@ class TodoViewController: UITableViewController
 {
 
     var itemArray = [Item]() // an array of Item objects (the model Item)
-    
-    let defaults = UserDefaults.standard
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist") // convert Items array to a plist file
     
     override func viewDidLoad()
     {
         super.viewDidLoad()
         
-        let newItem = Item()
-        newItem.title = "Eat"
-        itemArray.append(newItem)
-        
-        let newItem2 = Item()
-        newItem2.title = "What?"
-        itemArray.append(newItem2)
-        
-        let newItem3 = Item()
-        newItem3.title = "Food!"
-        itemArray.append(newItem3)
-        
-        
-        // populate the saved array from usersDefaults
-        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
-            itemArray = items
-        }
+        loadItems()
     }
     
     
@@ -67,11 +50,12 @@ class TodoViewController: UITableViewController
         // set done, so we can add/remove the checkmark for selected row
         itemArray[indexPath.row].done = itemArray[indexPath.row].done == true ? false : true
         
-        tableView.reloadData()
+        saveItems() // save the item to db
         
         // deselect selected row for better user experience
         tableView.deselectRow(at: indexPath, animated: true)
     }
+    
     
     
     //MARK - Add new item section
@@ -89,9 +73,10 @@ class TodoViewController: UITableViewController
             
             let newItem = Item()
             newItem.title = textField.text!
+            
             self.itemArray.append(newItem)
-            self.defaults.set(self.itemArray, forKey: "TodoListArray") // save to users defaults
-            self.tableView.reloadData()
+            
+            self.saveItems() // save the item to db
         }
         
         // create text field in the alert
@@ -105,6 +90,44 @@ class TodoViewController: UITableViewController
         
         // show alert
         present(alert, animated: true, completion: nil)
+    }
+    
+    
+    
+    //MARK - Model manipulation methods
+    
+    func saveItems()
+    {
+        // convert data to .plist
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        }
+        catch
+        {
+            print("Error \(error)")
+        }
+        
+        self.tableView.reloadData()
+    }
+    
+    
+    func loadItems()
+    {
+        if let data = try? Data(contentsOf: dataFilePath!)
+        {
+            // convert from .plist to a items array
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            }
+            catch
+            {
+                print("Error \(error)")
+            }
+        }
     }
     
 }
